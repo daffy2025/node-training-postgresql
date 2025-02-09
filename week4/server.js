@@ -96,7 +96,80 @@ const requestListener = async (req, res) => {
     } catch {
       errorHandler(res, headers, 500, "error", "伺服器錯誤");
     }
-    
+  } else if (req.url === "/api/coaches/skill" && req.method === "GET") {
+    try {
+      // 取得操作 "CreditPackage" 這個 Entity (資料表) 的所有方法
+      const skillRepo = AppDataSource.getRepository("Skill");
+      const allSkills = await skillRepo.find({
+        select: ['id','name']
+      });
+      res.writeHead(200, headers);
+      res.write(JSON.stringify({
+        status: "success",
+        data: allSkills
+      }));
+      res.end();
+    } catch {
+      errorHandler(res, headers, 500, "error", "伺服器錯誤");
+    }
+  } else if (req.url === "/api/coaches/skill" && req.method === "POST") {
+    req.on('end', async () => {
+      try {
+        const data = JSON.parse(body);
+
+        if (data.name === undefined || typeof(data.name) !== 'string' || data.name.trim().length === 0) {
+            errorHandler(res, headers, 400, "failed", "欄位未填寫正確");
+            return;
+        }
+        const skillRepo = AppDataSource.getRepository("Skill");
+        const skillName = await skillRepo.find({
+          where: {
+            name: data.name
+          }
+        });
+        if (skillName.length > 0) {
+          errorHandler(res, headers, 409, "failed", "資料重複");
+          return;
+        }
+        const newSkill = skillRepo.create({
+          name: data.name
+        });
+        const result = await skillRepo.save(newSkill);
+        res.writeHead(200, headers);
+        res.write(JSON.stringify({
+          status: "success",
+          data: {
+            id: result.id,
+            name: result.name
+          }
+        }));
+        res.end();
+      } catch {
+        errorHandler(res, headers, 500, "error", "伺服器錯誤");
+      }
+    });
+  } else if (req.url.startsWith("/api/coaches/skill/:") && req.method === "DELETE") {
+    try {
+      const id = req.url.split(':').pop();
+      if (id === undefined || id.length == 0) {
+        errorHandler(res, headers, 400, "failed", "ID錯誤");
+        return;
+      }
+      const skillRepo = AppDataSource.getRepository("Skill");
+      let result = await skillRepo.delete(id);
+
+      if (result.affected === 0) {
+        errorHandler(res, headers, 400, "failed", "ID錯誤");
+        return;
+      }
+      res.writeHead(200, headers);
+      res.write(JSON.stringify({
+        status: "success"
+      }));
+      res.end();
+    } catch {
+      errorHandler(res, headers, 500, "error", "伺服器錯誤");
+    }
   } else if (req.method === "OPTIONS") {
     res.writeHead(200, headers)
     res.end()
