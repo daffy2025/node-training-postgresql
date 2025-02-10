@@ -2,6 +2,7 @@ require("dotenv").config()
 const http = require("http")
 const AppDataSource = require("./db")
 const errorHandler = require("./errorHandler")
+const {isInvalidString, isInvalidNumver, isInvalidUuid} = require("./verify")
 
 const requestListener = async (req, res) => {
   const headers = {
@@ -29,34 +30,36 @@ const requestListener = async (req, res) => {
         data: allPkgs
       }));
       res.end();
-    } catch {
+    } catch(error) {
       errorHandler(res, headers, 500, "error", "伺服器錯誤");
     }
   } else if (req.url === "/api/credit-package" && req.method === "POST") {
     req.on('end', async () => {
       try {
-        const data = JSON.parse(body);
+        const {name, credit_amount, price} = JSON.parse(body);
 
-        if (data.name === undefined || typeof(data.name) !== 'string' || data.name.trim().length === 0 ||
-            data.credit_amount === undefined || typeof(data.credit_amount) !== 'number' || data.credit_amount < 0 ||
-            data.price == undefined || typeof(data.price) !== 'number' || data.price < 0) {
+        if (isInvalidString(name) || isInvalidNumver(credit_amount) || isInvalidNumver(price)) {
             errorHandler(res, headers, 400, "failed", "欄位未填寫正確");
             return;
+        }
+        if (credit_amount <= 0 || price <= 0) {
+          errorHandler(res, headers, 406, "failed", "欄位數值錯誤");
+          return;
         }
         const creditPkgRepo = AppDataSource.getRepository("CreditPackage");
         const pkgName = await creditPkgRepo.find({
           where: {
-            name: data.name
+            name
           }
         });
         if (pkgName.length > 0) {
           errorHandler(res, headers, 409, "failed", "資料重複");
           return;
-        }q
+        }
         const newPkg = creditPkgRepo.create({
-          name: data.name,
-          credit_amount: data.credit_amount,
-          price: data.price
+          name,
+          credit_amount,
+          price
         });
         const result = await creditPkgRepo.save(newPkg);
         res.writeHead(200, headers);
@@ -70,19 +73,20 @@ const requestListener = async (req, res) => {
           }
         }));
         res.end();
-      } catch {
+      } catch(error) {
         errorHandler(res, headers, 500, "error", "伺服器錯誤");
       }
     });
-  } else if (req.url.startsWith("/api/credit-package/:") && req.method === "DELETE") {
+  } else if (req.url.startsWith("/api/credit-package/") && req.method === "DELETE") {
     try {
-      const id = req.url.split(':').pop();
-      if (id === undefined || id.length == 0) {
+      const creditPackageId = req.url.split('/').pop();
+      console.log(creditPackageId)
+      if (isInvalidUuid(creditPackageId)) {
         errorHandler(res, headers, 400, "failed", "ID錯誤");
         return;
       }
       const creditPkgRepo = AppDataSource.getRepository("CreditPackage");
-      let result = await creditPkgRepo.delete(id);
+      let result = await creditPkgRepo.delete(creditPackageId);
 
       if (result.affected === 0) {
         errorHandler(res, headers, 400, "failed", "ID錯誤");
@@ -93,7 +97,7 @@ const requestListener = async (req, res) => {
         status: "success"
       }));
       res.end();
-    } catch {
+    } catch(error) {
       errorHandler(res, headers, 500, "error", "伺服器錯誤");
     }
   } else if (req.url === "/api/coaches/skill" && req.method === "GET") {
@@ -109,22 +113,22 @@ const requestListener = async (req, res) => {
         data: allSkills
       }));
       res.end();
-    } catch {
+    } catch(error) {
       errorHandler(res, headers, 500, "error", "伺服器錯誤");
     }
   } else if (req.url === "/api/coaches/skill" && req.method === "POST") {
     req.on('end', async () => {
       try {
-        const data = JSON.parse(body);
+        const {name} = JSON.parse(body);
 
-        if (data.name === undefined || typeof(data.name) !== 'string' || data.name.trim().length === 0) {
+        if (isInvalidString(name)) {
             errorHandler(res, headers, 400, "failed", "欄位未填寫正確");
             return;
         }
         const skillRepo = AppDataSource.getRepository("Skill");
         const skillName = await skillRepo.find({
           where: {
-            name: data.name
+            name
           }
         });
         if (skillName.length > 0) {
@@ -132,7 +136,7 @@ const requestListener = async (req, res) => {
           return;
         }
         const newSkill = skillRepo.create({
-          name: data.name
+          name
         });
         const result = await skillRepo.save(newSkill);
         res.writeHead(200, headers);
@@ -144,19 +148,19 @@ const requestListener = async (req, res) => {
           }
         }));
         res.end();
-      } catch {
+      } catch(error) {
         errorHandler(res, headers, 500, "error", "伺服器錯誤");
       }
     });
-  } else if (req.url.startsWith("/api/coaches/skill/:") && req.method === "DELETE") {
+  } else if (req.url.startsWith("/api/coaches/skill/") && req.method === "DELETE") {
     try {
-      const id = req.url.split(':').pop();
-      if (id === undefined || id.length == 0) {
+      const skillId = req.url.split('/').pop();
+      if (isInvalidUuid(skillId)) {
         errorHandler(res, headers, 400, "failed", "ID錯誤");
         return;
       }
       const skillRepo = AppDataSource.getRepository("Skill");
-      let result = await skillRepo.delete(id);
+      let result = await skillRepo.delete(skillId);
 
       if (result.affected === 0) {
         errorHandler(res, headers, 400, "failed", "ID錯誤");
@@ -167,7 +171,7 @@ const requestListener = async (req, res) => {
         status: "success"
       }));
       res.end();
-    } catch {
+    } catch(error) {
       errorHandler(res, headers, 500, "error", "伺服器錯誤");
     }
   } else if (req.method === "OPTIONS") {
