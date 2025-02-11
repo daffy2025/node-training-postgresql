@@ -1,7 +1,7 @@
 isInvalidString = (input) => {
     return input === undefined || typeof(input) !== 'string' || input.trim().length === 0
 }
-isInvalidNumver = (input) => {
+isInvalidNumber = (input) => {
     return input === undefined || typeof(input) !== 'number'
 }
 isInvalidUuid = (input) => {
@@ -9,4 +9,4 @@ isInvalidUuid = (input) => {
     const re = new RegExp(pattern);
     return re.test(input) === false
 }
-module.exports = {isInvalidString, isInvalidNumver, isInvalidUuid};
+module.exports = {isInvalidString, isInvalidNumber, isInvalidUuid};

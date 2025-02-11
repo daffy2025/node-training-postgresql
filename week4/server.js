@@ -2,7 +2,7 @@ require("dotenv").config()
 const http = require("http")
 const AppDataSource = require("./db")
 const errorHandler = require("./errorHandler")
-const {isInvalidString, isInvalidNumver, isInvalidUuid} = require("./verify")
+const {isInvalidString, isInvalidNumber, isInvalidUuid} = require("./verify")
 
 const requestListener = async (req, res) => {
   const headers = {
@@ -38,7 +38,7 @@ const requestListener = async (req, res) => {
       try {
         const {name, credit_amount, price} = JSON.parse(body);
 
-        if (isInvalidString(name) || isInvalidNumver(credit_amount) || isInvalidNumver(price)) {
+        if (isInvalidString(name) || isInvalidNumber(credit_amount) || isInvalidNumber(price)) {
             errorHandler(res, headers, 400, "failed", "欄位未填寫正確");
             return;
         }
@@ -80,7 +80,6 @@ const requestListener = async (req, res) => {
   } else if (req.url.startsWith("/api/credit-package/") && req.method === "DELETE") {
     try {
       const creditPackageId = req.url.split('/').pop();
-      console.log(creditPackageId)
       if (isInvalidUuid(creditPackageId)) {
         errorHandler(res, headers, 400, "failed", "ID錯誤");
         return;
