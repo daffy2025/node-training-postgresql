@@ -35,12 +35,12 @@ router.post('/', async (req, res, next) => {
             })
             return;
         }
-        const creditPackageRepo = await dataSource.getRepository(repoName);
-        const existCreditPurchase = await creditPackageRepo.find({
+        const creditPackageRepo = dataSource.getRepository(repoName);
+        const existCreditPurchase = await creditPackageRepo.findOne({
             where: { name }
         })
 
-        if (existCreditPurchase.length !== 0) {
+        if (existCreditPurchase) {
             res.status(409).json({
                 status: "failed",
                 message: "資料重複"
@@ -48,7 +48,7 @@ router.post('/', async (req, res, next) => {
             return;
         }
 
-        const newCreditPurchase = await creditPackageRepo.create({
+        const newCreditPurchase = creditPackageRepo.create({
             name,
             credit_amount,
             price
@@ -57,7 +57,12 @@ router.post('/', async (req, res, next) => {
         const result = await creditPackageRepo.save(newCreditPurchase)
         res.status(200).json({
             status: "success",
-            data: result
+            data: {
+                id: result.id,
+                name: result.name,
+                credit_amount: result.credit_amount,
+                price: result.price
+            }
         })
     }
     catch (err) {
@@ -77,7 +82,7 @@ router.delete('/:creditPackageId', async (req, res, next) => {
             return;
         }
         const creditPackageRepo = dataSource.getRepository(repoName);
-        const result = creditPackageRepo.delete(creditPackageId);
+        const result = await creditPackageRepo.delete(creditPackageId);
         if (result.affected === 0) {
             res.status(400).json({
                 status: "failed",
