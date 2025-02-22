@@ -8,6 +8,7 @@ const { errHandler } = require('../utils/errHandler')
 const {isInvalidString, isInvalidInteger, isInvalidUuid, 
     isInvalidUrl, isInvalidTimestamp} = require('../utils/verify')
 
+//新增教練課程資料
 router.post('/courses', async (req, res, next) => {
     try {
         const { user_id, skill_id, name, description, start_at, end_at, max_participants, meeting_url} = req.body;
@@ -80,6 +81,7 @@ router.post('/courses', async (req, res, next) => {
     }
 })
 
+//將使用者新增為教練
 router.post('/:userId', async (req, res, next) => {
     try {
         const { userId } = req.params;
@@ -150,6 +152,7 @@ router.post('/:userId', async (req, res, next) => {
     }
 })
 
+//編輯教練課程資料
 router.put('/courses/:courseId', async (req, res, next) => {
     try {
         const { courseId } = req.params;

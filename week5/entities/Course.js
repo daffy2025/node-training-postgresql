@@ -1,4 +1,4 @@
-const { EntitySchema } = require('typeorm')
+const { EntitySchema, JoinColumn } = require('typeorm')
 
 module.exports = new EntitySchema({
     name: 'Course',
@@ -7,29 +7,15 @@ module.exports = new EntitySchema({
         id: {
             primary: true,
             type: 'uuid',
-            generated: 'uuid',
-            nullable: false,
-            unique: true
+            generated: 'uuid'
         },
         user_id: {
             type: 'uuid',
             nullable: false,
-            foreignKey: {
-                name: 'course_user_id_fkey',
-                columnNames: ['user_id'],
-                referenceTableName: 'User',
-                referenceColumnNames: ['id']
-            }
         },
         skill_id: {
             type: 'uuid',
             nullable: false,
-            foreignKey: {
-                name: 'course_skill_id_fkey',
-                columnNames: ['skill_id'],
-                referenceTableName: 'Skill',
-                referenceColumnNames: ['id']
-            }
         },
         name: {
             type: 'varchar',
@@ -59,17 +45,35 @@ module.exports = new EntitySchema({
         },
         createdAt: {
             type: 'timestamp',
-            nullable: false,
             name: 'created_at',
             createDate: true,
             nullable: false
         },
         updatedAt: {
             type: 'timestamp',
-            nullable: false,
             name: 'updated_at',
             updateDate: true,
             nullable: false
+        }
+    },
+    relations: {
+        User: {
+            target: 'User',
+            type: 'many-to-one',
+            joinColumn: {
+                name: 'user_id',
+                referenceColumnName: 'id',
+                foreignKeyConstraintName: 'course_user_id_fk'
+            }
+        },
+        Skill: {
+            target: 'Skill',
+            type: 'many-to-one',
+            joinColumn: {
+                name: 'skill_id',
+                referenceColumnName: 'id',
+                foreignKeyConstraintName: 'course_skill_id_fk'
+            }
         }
     }
 })

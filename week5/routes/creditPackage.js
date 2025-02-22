@@ -8,6 +8,7 @@ const {isInvalidString, isInvalidInteger, isInvalidUuid} = require('../utils/ver
 
 const repoName = 'CreditPackage'
 
+//取得購買方案列表
 router.get('/', async (req, res, next) => {
     try {
         const packages = await dataSource.getRepository(repoName).find({
@@ -23,6 +24,7 @@ router.get('/', async (req, res, next) => {
     }
 })
 
+//新增購買方案
 router.post('/', async (req, res, next) => {
     try {
         const {name, credit_amount, price} = req.body;
@@ -71,6 +73,7 @@ router.post('/', async (req, res, next) => {
     }
 })
 
+//刪除購買方案
 router.delete('/:creditPackageId', async (req, res, next) => {
     try {
         const {creditPackageId} = req.params;

@@ -7,6 +7,7 @@ const { errHandler } = require('../utils/errHandler')
 
 const {isInvalidString, isInvalidInteger, isInvalidUuid} = require('../utils/verify')
 
+//取得教練列表
 router.get('/', async (req, res, next) => {
     try {
         const {per, page} = req.query;
@@ -54,6 +55,7 @@ router.get('/', async (req, res, next) => {
     }
 })
 
+//取得教練詳細資訊
 router.get('/:coachId', async (req, res, next) => {
     try {
         const {coachId} = req.params;

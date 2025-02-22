@@ -7,6 +7,7 @@ const { isInvalidString, isInvalidUuid } = require('../utils/verify')
 
 const repoName = 'Skill'
 
+//取得教練專長列表
 router.get('/', async (req, res, next) => {
     try {
         const skillRepo = dataSource.getRepository(repoName)
@@ -24,6 +25,7 @@ router.get('/', async (req, res, next) => {
     }
 })
 
+//新增教練專長
 router.post('/', async (req, res, next) => {
     try {
         const { name } = req.body;
@@ -65,6 +67,7 @@ router.post('/', async (req, res, next) => {
     }
 })
 
+//刪除教練專長
 router.delete('/:skillId', async (req, res, next) => {
     try {
         const {skillId} = req.params;

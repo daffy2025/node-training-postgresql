@@ -12,6 +12,7 @@ const {errHandler} = require('../utils/errHandler')
 const repoName = 'User'
 const saltRounds = 10 //for bcrypt hash
 
+//使用者註冊
 router.post('/signup', async (req, res, next) => {
     try {
         const {name, email, password} = req.body;
