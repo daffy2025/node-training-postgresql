@@ -2,8 +2,9 @@ const express = require('express')
 const router = express.Router()
 
 const { dataSource } = require('../db/data-source')
+
+const appError = require('../utils/appError')
 const logger = require('../utils/logger')('Admin')
-const { errHandler } = require('../utils/errHandler')
 
 const {isInvalidString, isInvalidInteger, isInvalidUuid, 
     isInvalidUrl, isInvalidTimestamp} = require('../utils/verify')
@@ -20,7 +21,9 @@ router.post('/courses', async (req, res, next) => {
             isInvalidInteger(max_participants) ||
             isInvalidTimestamp(start_at) ||
             isInvalidTimestamp(end_at)) {
-            errHandler(res, 400, "新增教練課程", "欄位未填寫正確")
+            const warnMessage = '欄位未填寫正確'
+            logger.warn('新增教練課程：',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
         /* Option */
@@ -28,11 +31,8 @@ router.post('/courses', async (req, res, next) => {
                 typeof(meeting_url) !== 'string' ||
                 isInvalidUrl(meeting_url))
             ){
-            logger.warn("新增教練課程：照片來源網址格式錯誤")
-            res.status(400).json({
-                "status" : "failed",
-                "message": "欄位未填寫正確"
-            })
+            logger.warn('新增教練課程：照片來源網址格式錯誤')
+            next(appError(400, 'failed', '欄位未填寫正確', next))
             return
         }
         const userRepo = dataSource.getRepository('User')
@@ -41,11 +41,15 @@ router.post('/courses', async (req, res, next) => {
             where: {id: user_id}
         })
         if (!existingUser) {
-            errHandler(res, 400, "新增教練課程", "使用者不存在")
+            const warnMessage = '使用者不存在'
+            logger.warn('新增教練課程：',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
         if (existingUser.role !== 'COACH') {
-            errHandler(res, 409, "新增教練課程", "使用者尚未成為教練")
+            const warnMessage = '使用者尚未成為教練'
+            logger.warn('新增教練課程：',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
         const skillRepo = dataSource.getRepository('Skill')
@@ -54,7 +58,9 @@ router.post('/courses', async (req, res, next) => {
             where: {id: skill_id}
         })
         if (!existingSkill) {
-            errHandler(res, 400, "新增教練課程", "此專長不存在")
+            const warnMessage = '此專長不存在'
+            logger.warn('新增教練課程：',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
         const courseRepo = dataSource.getRepository('Course')
@@ -90,7 +96,9 @@ router.post('/:userId', async (req, res, next) => {
         if (isInvalidUuid(userId) ||
             isInvalidInteger(experience_years) || 
             isInvalidString(description)) {
-            errHandler(res, 400, "新增教練", "欄位未填寫正確")
+            const warnMessage = '欄位未填寫正確'
+            logger.warn('新增教練',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
         /* Option */
@@ -98,10 +106,7 @@ router.post('/:userId', async (req, res, next) => {
             typeof(profile_image_url) === 'string' &&
             isInvalidUrl(profile_image_url)) {
             logger.warn("新增教練：照片來源網址格式錯誤")
-            res.status(400).json({
-                "status" : "failed",
-                "message": "欄位未填寫正確"
-            })
+            next(appError(400, 'failed', '欄位未填寫正確', next))
             return
         }
         const userRepo = dataSource.getRepository('User')
@@ -110,11 +115,15 @@ router.post('/:userId', async (req, res, next) => {
             where: {id: userId}
         })
         if (!existingUser) {
-            errHandler(res, 400, "新增教練", "使用者不存在")
+            const warnMessage = '使用者不存在'
+            logger.warn('新增教練',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
         if (existingUser.role === 'COACH') {
-            errHandler(res, 409, "新增教練", "使用者已經是教練")
+            const warnMessage = '使用者不使用者已經是教練存在'
+            logger.warn('新增教練',warnMessage)
+            next(appError(409, 'failed', warnMessage, next))
             return
         }
         const coachRepo = dataSource.getRepository('Coach')
@@ -131,7 +140,9 @@ router.post('/:userId', async (req, res, next) => {
             role: 'COACH'
         })
         if (updateUser.affected === 0) {
-            errHandler(res, 400, "新增教練", "更新使用者失敗")
+            const warnMessage = '更新使用者失敗'
+            logger.warn('新增教練',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
         const savedCoach = await coachRepo.save(newCoach)
@@ -165,16 +176,15 @@ router.put('/courses/:courseId', async (req, res, next) => {
             isInvalidInteger(max_participants) ||
             isInvalidTimestamp(start_at) ||
             isInvalidTimestamp(end_at)) {
-            errHandler(res, 400, "編輯教練課程", "欄位未填寫正確")
+            const warnMessage = '欄位未填寫正確'
+            logger.warn('編輯教練課程',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
         if (isInvalidString(meeting_url) ||
             isInvalidUrl(meeting_url)) {
             logger.warn("編輯教練課程：照片來源網址格式錯誤")
-            res.status(400).json({
-                "status" : "failed",
-                "message": "欄位未填寫正確"
-            })
+            next(appError(400, 'failed', '欄位未填寫正確', next))
             return
         }
         const courseRepo = dataSource.getRepository('Course')
@@ -183,7 +193,9 @@ router.put('/courses/:courseId', async (req, res, next) => {
             where: {id: courseId}
         })
         if (!existingCourse) {
-            errHandler(res, 400, "編輯教練課程", "課程不存在")
+            const warnMessage = '課程不存在'
+            logger.warn('編輯教練課程',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
         const skillRepo = dataSource.getRepository('Skill')
@@ -192,7 +204,9 @@ router.put('/courses/:courseId', async (req, res, next) => {
             where: {id: skill_id}
         })
         if (!existingSkill) {
-            errHandler(res, 400, "編輯教練課程", "此專長不存在")
+            const warnMessage = '此專長不存在'
+            logger.warn('編輯教練課程',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
         const updateCourse = await courseRepo.update({
@@ -207,7 +221,9 @@ router.put('/courses/:courseId', async (req, res, next) => {
             meeting_url
         })
         if (updateCourse.affected === 0) {
-            errHandler(res, 400, "編輯教練課程", "更新課程失敗")
+            const warnMessage = '更新課程失敗'
+            logger.warn('編輯教練課程',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
         const updatedCourse = await courseRepo.findOne({

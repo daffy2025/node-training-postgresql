@@ -1,24 +1,24 @@
 const express = require('express')
-const bcrypt = require('bcrypt')
-
 const router = express.Router()
-const config = require('../config/index')
+
 const { dataSource } = require('../db/data-source')
 
-const repoName = 'User'
+const appError = require('../utils/appError')
 const logger = require('../utils/logger')("User")
+const {isInvalidString,
+    isInvalidName, isInvalidEmail, isInvalidPassword} = require('../utils/verify')
+
+const repoName = 'User'
+
+const saltRounds = 10 //for bcrypt hash
+const config = require('../config/index')
+const bcrypt = require('bcrypt')
 const generateJWT = require('../utils/generateJWT')
 const auth = require('../utils/auth')({
     secret: config.get('secret').jwtSecret,
     userRepository: dataSource.getRepository(repoName),
     logger
 })
-
-const {isInvalidString, 
-    isInvalidName, isInvalidEmail, isInvalidPassword} = require('../utils/verify')
-const {errHandler} = require('../utils/errHandler')
-
-const saltRounds = 10 //for bcrypt hash
 
 //使用者註冊
 router.post('/signup', async (req, res, next) => {
@@ -29,22 +29,25 @@ router.post('/signup', async (req, res, next) => {
             isInvalidString(password)) {
             const warnMessage = '欄位未填寫正確'
             logger.warn(warnMessage)
-            res.status(400).json({
-                "status" : "failed",
-                "message": warnMessage
-            })
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
         if (isInvalidName(name)) {
-            errHandler(res, 400,"建立使用者錯誤","使用者名稱不符合規則，最少2個字，最多10個字，不可包含任何特殊符號與空白，第一個字不可為數字")
+            const warnMessage = '使用者名稱不符合規則，最少2個字，最多10個字，不可包含任何特殊符號與空白，第一個字不可為數字'
+            logger.warn(`建立使用者錯誤：${warnMessage}`)
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
         if (isInvalidEmail(email)) {
-            errHandler(res, 400,"建立使用者錯誤","使用者信箱不符合規則")
+            const warnMessage = '使用者信箱不符合規則'
+            logger.warn(`建立使用者錯誤：${warnMessage}`)
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
         if (isInvalidPassword(password)) {
-            errHandler(res, 400, "建立使用者錯誤","密碼不符合規則，需要包含英文數字大小寫，最短8個字，最長16個字")
+            const warnMessage = '密碼不符合規則，需要包含英文數字大小寫，最短8個字，最長16個字'
+            logger.warn(`建立使用者錯誤：${warnMessage}`)
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
         const userRepo = dataSource.getRepository(repoName)
@@ -52,7 +55,9 @@ router.post('/signup', async (req, res, next) => {
             where: { email }
         })
         if (existEmail) {
-            errHandler(res, 409,"建立使用者錯誤","Email已被使用")
+            const warnMessage = 'Email已被使用'
+            logger.warn(`建立使用者錯誤：${warnMessage}`)
+            next(appError(409, 'failed', warnMessage, next))
             return
         }
         const salt = await bcrypt.genSalt(saltRounds)
@@ -88,39 +93,38 @@ router.post('/login', async (req, res, next) => {
             isInvalidString(password)) {
             const warnMessage = '欄位未填寫正確'
             logger.warn(warnMessage)
-            res.status(400).json({
-                "status" : "failed",
-                "message": warnMessage
-            })
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
 
         if (isInvalidEmail(email)) {
-            errHandler(res, 400,"登入使用者錯誤","使用者信箱不符合規則")
+            const warnMessage = '使用者信箱不符合規則'
+            logger.warn('登入錯誤',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
         if (isInvalidPassword(password)) {
-            errHandler(res, 400, "登入使用者錯誤","密碼不符合規則，需要包含英文數字大小寫，最短8個字，最長16個字")
+            const warnMessage = '密碼不符合規則，需要包含英文數字大小寫，最短8個字，最長16個字'
+            logger.warn('登入錯誤',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
-        // if (isInvalidEmail(email) ||
-        //     isInvalidPassword(password)) {
-        //     errHandler(res, 400, "登入使用者錯誤","使用者不存在或密碼輸入錯誤")
-        //     return
-        // }
         const userRepo = dataSource.getRepository(repoName)
         const existUser = await userRepo.findOne({
             select: ['id','name','password'],
             where: { email }
         })
-        console.log(existUser);
         if (!existUser) {
-            errHandler(res, 400,"登入使用者錯誤","使用者不存在或密碼輸入錯誤")
+            const warnMessage = '使用者不存在或密碼輸入錯誤'
+            logger.warn('登入錯誤',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
         const isMatch = await bcrypt.compare(password, existUser.password)
         if (!isMatch) {
-            errHandler(res, 400,"登入使用者錯誤","使用者不存在或密碼輸入錯誤")
+            const warnMessage = '使用者不存在或密碼輸入錯誤'
+            logger.warn('登入錯誤',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
             return
         }
         const token = await generateJWT(

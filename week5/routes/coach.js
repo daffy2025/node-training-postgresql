@@ -2,9 +2,9 @@ const express = require('express')
 const router = express.Router()
 
 const { dataSource } = require('../db/data-source')
-const logger = require('../utils/logger')('Admin')
-const { errHandler } = require('../utils/errHandler')
 
+const appError = require('../utils/appError')
+const logger = require('../utils/logger')('Admin')
 const {isInvalidString, isInvalidInteger, isInvalidUuid} = require('../utils/verify')
 
 //取得教練列表
@@ -12,20 +12,14 @@ router.get('/', async (req, res, next) => {
     try {
         const {per, page} = req.query;
         if (isInvalidString(per) || isInvalidString(page)) {
-            res.status(400).json({
-                status: "failed",
-                message: "欄位未填寫正確"
-            })
+            next(appError(400, 'failed', '欄位未填寫正確', next))
             return;
         }
         const pageSize = parseInt(per)
         const currentPage = parseInt(page)
         if (isInvalidInteger(pageSize) ||
             isInvalidInteger(currentPage)) {
-            res.status(400).json({
-                status: "failed",
-                message: "欄位未填寫正確"
-            })
+            next(appError(400, 'failed', '欄位未填寫正確', next))
             return;
         }
         const coachRepo = dataSource.getRepository('Coach')
@@ -60,10 +54,7 @@ router.get('/:coachId', async (req, res, next) => {
     try {
         const {coachId} = req.params;
         if (isInvalidString(coachId) || isInvalidUuid(coachId)) {
-            res.status(400).json({
-                status: "failed",
-                message: "欄位未填寫正確"
-            })
+            next(appError(400, 'failed', '欄位未填寫正確', next))
             return;
         }
 
@@ -86,10 +77,7 @@ router.get('/:coachId', async (req, res, next) => {
             relations: ['User']
         })
         if (!matchCoach) {
-            res.status(400).json({
-                status: "failed",
-                message: "找不到該教練"
-            })
+            next(appError(400, 'failed', '找不到該教練', next))
             return;
         }
         res.status(200).json({

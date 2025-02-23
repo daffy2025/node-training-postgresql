@@ -1,8 +1,9 @@
 const express = require('express')
-
 const router = express.Router()
+
 const { dataSource } = require('../db/data-source')
 
+const appError = require('../utils/appError')
 const logger = require('../utils/logger')("CreditPackage")
 const {isInvalidString, isInvalidInteger, isInvalidUuid} = require('../utils/verify')
 
@@ -31,10 +32,7 @@ router.post('/', async (req, res, next) => {
         if (isInvalidString(name) ||
             isInvalidInteger(credit_amount) ||
             isInvalidInteger(price)) {
-            res.status(400).json({
-                status: "failed",
-                message: "欄位未填寫正確"
-            })
+            next(appError(400, 'failed', '欄位未填寫正確', next))
             return;
         }
         const creditPackageRepo = dataSource.getRepository(repoName);
@@ -43,10 +41,7 @@ router.post('/', async (req, res, next) => {
         })
 
         if (existCreditPurchase) {
-            res.status(409).json({
-                status: "failed",
-                message: "資料重複"
-            })
+            next(appError(409, 'failed', '資料重複', next))
             return;
         }
 
@@ -78,19 +73,13 @@ router.delete('/:creditPackageId', async (req, res, next) => {
     try {
         const {creditPackageId} = req.params;
         if (isInvalidUuid(creditPackageId)) {
-            res.status(400).json({
-                status: "failed",
-                message: "欄位未填寫正確"
-            })
+            next(appError(400, 'failed', '欄位未填寫正確', next))
             return;
         }
         const creditPackageRepo = dataSource.getRepository(repoName);
         const result = await creditPackageRepo.delete(creditPackageId);
         if (result.affected === 0) {
-            res.status(400).json({
-                status: "failed",
-                message: "ID錯誤"
-            })
+            next(appError(400, 'failed', 'ID錯誤', next))
             return;
         }
         res.status(200).json({

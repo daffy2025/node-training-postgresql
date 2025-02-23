@@ -3,7 +3,9 @@ const cors = require('cors')
 const path = require('path')
 const pinoHttp = require('pino-http')
 
+const appError = require('./utils/appError')
 const logger = require('./utils/logger')('App')
+
 const creditPackageRouter = require('./routes/creditPackage')
 const skillRouter = require('./routes/skill')
 const userRouter = require('./routes/user')
@@ -38,18 +40,23 @@ app.use('/api/coaches', coachRouter)
 app.use('/api/courses', courseRouter)
 
 app.use( (req, res, next) => {
-  res.status(404).json({
-    status: 'error',
-    message: '無此路由資訊'
-  })
+  next(appError(404, 'error', '無此路由資訊', next))
 })
+
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   logger.error(err)
-  res.status(500).json({
-    status: 'error',
-    message: '伺服器錯誤'
-  })
+  if (err.isOperational) {
+    res.status(err.statusCode).json({
+      status: err.name,
+      message: err.message
+    })
+  } else {
+    res.status(500).json({
+      status: 'error',
+      message: '伺服器錯誤'
+    })
+  }
 })
 
 module.exports = app
