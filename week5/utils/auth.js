@@ -9,7 +9,9 @@ const FailMessageMap = {
 
 const generateError = (status, message) => {
     const err = new Error(message)
-    err.status = status
+    err.statusCode = status
+    err.name = 'failed';
+    err.isOperational = true;
     return err
 }
 
@@ -30,7 +32,7 @@ const verifyJWT = (token, secret) => {
     return new Promise((resolve, reject) => {
         jwt.verify(token, secret, (error, decoded) => {
             if (error)
-                reject(formatVerifyError(errpr))
+                reject(formatVerifyError(error))
             else
                 resolve(decoded)
         })

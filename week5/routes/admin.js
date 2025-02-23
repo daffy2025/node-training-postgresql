@@ -5,17 +5,24 @@ const { dataSource } = require('../db/data-source')
 
 const appError = require('../utils/appError')
 const logger = require('../utils/logger')('Admin')
-
 const {isInvalidString, isInvalidInteger, isInvalidUuid, 
     isInvalidUrl, isInvalidTimestamp} = require('../utils/verify')
 
-//新增教練課程資料
-router.post('/courses', async (req, res, next) => {
-    try {
-        const { user_id, skill_id, name, description, start_at, end_at, max_participants, meeting_url} = req.body;
+const config = require('../config/index')
+const auth = require('../utils/auth')({
+    secret: config.get('secret').jwtSecret,
+    userRepository: dataSource.getRepository('User'),
+    logger
+})
+const isCoach = require('../utils/isCoach')
 
-        if (isInvalidUuid(user_id) ||
-            isInvalidUuid(skill_id) ||
+//新增教練課程資料
+router.post('/courses', auth, isCoach, async (req, res, next) => {
+    try {
+        const { id } = req.user
+        const { skill_id, name, description, start_at, end_at, max_participants, meeting_url} = req.body;
+
+        if (isInvalidUuid(skill_id) ||
             isInvalidString(name) ||
             isInvalidString(description) || 
             isInvalidInteger(max_participants) ||
@@ -35,26 +42,8 @@ router.post('/courses', async (req, res, next) => {
             next(appError(400, 'failed', '欄位未填寫正確', next))
             return
         }
-        const userRepo = dataSource.getRepository('User')
-        const existingUser = await userRepo.findOne({
-            select: ['name','role'],
-            where: {id: user_id}
-        })
-        if (!existingUser) {
-            const warnMessage = '使用者不存在'
-            logger.warn('新增教練課程：',warnMessage)
-            next(appError(400, 'failed', warnMessage, next))
-            return
-        }
-        if (existingUser.role !== 'COACH') {
-            const warnMessage = '使用者尚未成為教練'
-            logger.warn('新增教練課程：',warnMessage)
-            next(appError(400, 'failed', warnMessage, next))
-            return
-        }
         const skillRepo = dataSource.getRepository('Skill')
         const existingSkill = await skillRepo.findOne({
-            select: ['name'],
             where: {id: skill_id}
         })
         if (!existingSkill) {
@@ -65,7 +54,7 @@ router.post('/courses', async (req, res, next) => {
         }
         const courseRepo = dataSource.getRepository('Course')
         const newCourse = courseRepo.create({
-            user_id,
+            user_id: id,
             skill_id,
             name,
             description,
@@ -164,8 +153,9 @@ router.post('/:userId', async (req, res, next) => {
 })
 
 //編輯教練課程資料
-router.put('/courses/:courseId', async (req, res, next) => {
+router.put('/courses/:courseId', auth, isCoach, async (req, res, next) => {
     try {
+        const { id } = req.user
         const { courseId } = req.params;
         const { skill_id, name, description, start_at, end_at, max_participants, meeting_url} = req.body;
 
@@ -190,7 +180,7 @@ router.put('/courses/:courseId', async (req, res, next) => {
         const courseRepo = dataSource.getRepository('Course')
         const existingCourse = await courseRepo.findOne({
             select: ['name'],
-            where: {id: courseId}
+            where: {id: courseId, user_id: id}
         })
         if (!existingCourse) {
             const warnMessage = '課程不存在'
