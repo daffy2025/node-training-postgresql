@@ -147,4 +147,82 @@ router.post('/login', async (req, res, next) => {
     }
 })
 
+//取得個人資料
+router.get('/profile', auth, async (req, res, next) => {
+    try {
+        const { id } = req.user
+        const userRepo = dataSource.getRepository(repoName)
+        const getUser = await userRepo.findOne({
+            select: ['email','name'],
+            where: { id }
+        })
+        if (!getUser) {
+            next(appError(400, 'failed', '欄位未填寫正確', next))
+            return;
+        }
+        res.status(200).json({
+            status: 'success',
+            data: getUser
+        })
+    } catch (err) {
+        logger.error('取得使用者資料錯誤:',err)
+        next(err)
+    }
+})
+
+//更新個人資料
+router.put('/profile', auth, async (req, res, next) => {
+    try {
+        const { id } = req.user
+        const {name} = req.body;
+        if (isInvalidString(name)) {
+            const warnMessage = '欄位未填寫正確'
+            logger.warn(warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
+            return
+        }
+        if (isInvalidName(name)) {
+            const warnMessage = '使用者名稱不符合規則，最少2個字，最多10個字，不可包含任何特殊符號與空白，第一個字不可為數字'
+            logger.warn(`更新使用者錯誤：${warnMessage}`)
+            next(appError(400, 'failed', warnMessage, next))
+            return
+        }
+        const userRepo = dataSource.getRepository(repoName)
+        const getUser = await userRepo.findOne({
+            select: ['name'],
+            where: { id }
+        })
+        if (!getUser) {
+            next(appError(400, 'failed', '無此使用者', next))
+            return;
+        }
+        if (name === getUser.name) {
+            next(appError(400, 'failed', '使用者名稱未變更', next))
+            return;
+        }
+
+        const updateUser = await userRepo.update({
+            id
+        }, {
+            name
+        })
+        if (updateUser.affected === 0) {
+            const warnMessage = '更新使用者失敗'
+            logger.warn('更新使用者錯誤：', warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
+            return
+        }
+        const updatedUser = await userRepo.findOne({
+            select: ['name'],
+            where: { id }
+        })
+        res.status(201).json({
+            status: 'success',
+            data: updatedUser
+        })
+    } catch (err) {
+        logger.error('更新使用者錯誤:', err)
+        next(err)
+    }
+})
 module.exports = router
