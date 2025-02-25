@@ -4,7 +4,7 @@ const router = express.Router()
 const { dataSource } = require('../db/data-source')
 
 const appError = require('../utils/appError')
-const logger = require('../utils/logger')('Skill')
+const logger = require('../utils/logger')('skill')
 const { isInvalidString, isInvalidUuid } = require('../utils/verify')
 
 const repoName = 'Skill'

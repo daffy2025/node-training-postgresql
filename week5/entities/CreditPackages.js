@@ -13,8 +13,7 @@ module.exports = new EntitySchema({
     name: {
       type: 'varchar',
       length: 50,
-      nullable: false,
-      unique: true
+      nullable: false
     },
     credit_amount: {
       type: 'integer',

@@ -4,7 +4,7 @@ const router = express.Router()
 const { dataSource } = require('../db/data-source')
 
 const appError = require('../utils/appError')
-const logger = require('../utils/logger')("User")
+const logger = require('../utils/logger')("user")
 const {isInvalidString,
     isInvalidName, isInvalidEmail, isInvalidPassword} = require('../utils/verify')
 

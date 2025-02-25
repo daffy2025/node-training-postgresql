@@ -4,7 +4,7 @@ const router = express.Router()
 const { dataSource } = require('../db/data-source')
 
 const appError = require('../utils/appError')
-const logger = require('../utils/logger')('Admin')
+const logger = require('../utils/logger')('admin')
 const {isInvalidString, isInvalidInteger, isInvalidUuid, 
     isInvalidUrl, isInvalidTimestamp} = require('../utils/verify')
 
@@ -110,7 +110,7 @@ router.post('/:userId', async (req, res, next) => {
             return
         }
         if (existingUser.role === 'COACH') {
-            const warnMessage = '使用者不使用者已經是教練存在'
+            const warnMessage = '使用者已經是教練'
             logger.warn('新增教練',warnMessage)
             next(appError(409, 'failed', warnMessage, next))
             return

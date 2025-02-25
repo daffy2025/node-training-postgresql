@@ -4,7 +4,7 @@ const path = require('path')
 const pinoHttp = require('pino-http')
 
 const appError = require('./utils/appError')
-const logger = require('./utils/logger')('App')
+const logger = require('./utils/logger')('app')
 
 const creditPackageRouter = require('./routes/creditPackage')
 const skillRouter = require('./routes/skill')

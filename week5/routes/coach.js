@@ -4,7 +4,7 @@ const router = express.Router()
 const { dataSource } = require('../db/data-source')
 
 const appError = require('../utils/appError')
-const logger = require('../utils/logger')('Admin')
+const logger = require('../utils/logger')('coach')
 const {isInvalidString, isInvalidInteger, isInvalidUuid} = require('../utils/verify')
 
 //取得教練列表
