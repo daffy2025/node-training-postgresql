@@ -103,8 +103,8 @@ router.get('/:coachId', async (req, res, next) => {
                     experience_years: matchCoach.experience_years,
                     description: matchCoach.description,
                     profile_image_url: matchCoach.profile_image_url,
-                    created_at: matchCoach.created_at,
-                    updated_at: matchCoach.updated_at
+                    created_at: matchCoach.createdAt,
+                    updated_at: matchCoach.updatedAt
                 }
             }
         }) 
