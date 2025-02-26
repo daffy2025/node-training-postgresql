@@ -12,6 +12,7 @@ const userRouter = require('./routes/user')
 const adminRouter = require('./routes/admin')
 const coachRouter = require('./routes/coach')
 const courseRouter = require('./routes/courses')
+const uploadRouter = require('./routes/upload')
 
 const app = express()
 app.use(cors())
@@ -38,6 +39,7 @@ app.use('/api/users', userRouter)
 app.use('/api/admin/coaches', adminRouter)
 app.use('/api/coaches', coachRouter)
 app.use('/api/courses', courseRouter)
+app.use('/api/upload', uploadRouter)
 
 app.use( (req, res, next) => {
   next(appError(404, 'error', '無此路由資訊', next))
