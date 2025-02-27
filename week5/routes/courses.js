@@ -82,7 +82,8 @@ router.post('/:courseId', auth, async (req, res, next) => {
         const courseBooked = await courseBookingRepo.findOne({
             where: {
                 user_id: id,
-                course_id: courseId
+                course_id: courseId,
+                cancelledAt: IsNull()
             }
         })
         if (courseBooked) {
