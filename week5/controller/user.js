@@ -53,7 +53,6 @@ const userSingup = async (req, res, next) => {
             next(appError(409, 'failed', warnMessage, next))
             return
         }
-        console.log(`saltRounds = ${saltRounds}`)
         const salt = await bcrypt.genSalt(parseInt(saltRounds))
         const hashPassword = await bcrypt.hash(password, salt)
         const newUser = userRepo.create({
@@ -220,9 +219,124 @@ const editUserProfile = async (req, res, next) => {
     }
 }
 
+const changeUserPassword = async (req, res, next) => {
+    try {
+        const { id } = req.user
+        const {password, new_password, confirm_new_password} = req.body;
+        if (isInvalidString(password) ||
+            isInvalidString(new_password) ||
+            isInvalidString(confirm_new_password)) {
+            const warnMessage = '欄位未填寫正確'
+            logger.warn(warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
+            return
+        }
+
+        if (isInvalidPassword(password) ||
+            isInvalidPassword(new_password) ||
+            isInvalidPassword(confirm_new_password)) {
+            const warnMessage = '密碼不符合規則，需要包含英文數字大小寫，最短8個字，最長16個字'
+            logger.warn('更新密碼錯誤',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
+            return
+        }
+        if (password === new_password) {
+            const warnMessage = '新密碼不能與舊密碼相同'
+            logger.warn('更新密碼錯誤',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
+            return
+        }
+        if (new_password !== confirm_new_password) {
+            const warnMessage = '新密碼與驗證新密碼不一致'
+            next(appError(400, 'failed', warnMessage, next))
+            return
+        }
+        const userRepo = dataSource.getRepository(repoName)
+        const existUser = await userRepo.findOne({
+            select: ['password'],
+            where: { id }
+        })
+        if (!existUser) {
+            const warnMessage = '使用者不存在'
+            logger.warn('更新密碼錯誤',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
+            return
+        }
+        const isMatch = await bcrypt.compare(password, existUser.password)
+        if (!isMatch) {
+            const warnMessage = '密碼輸入錯誤'
+            logger.warn('更新密碼錯誤',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
+            return
+        }
+        const salt = await bcrypt.genSalt(parseInt(saltRounds))
+        const hashPassword = await bcrypt.hash(new_password, salt)
+        const newUser = userRepo.update({
+            id,
+        },{
+            name: existUser.name,
+            email: existUser.email,
+            role: existUser.role,
+            password: hashPassword
+        })
+        if ((await newUser).affected === 0) {
+            const warnMessage = '更新密碼失敗'
+            logger.warn('更新密碼錯誤',warnMessage)
+            next(appError(400, 'failed', warnMessage, next))
+            return
+        }
+        res.status(201).json({
+            status: "success",
+            data: null
+        })
+    } catch (err) {
+        logger.error('更新密碼錯誤:', err)
+        next(err)
+    }
+}
+
+
+//取得使用者已購買的方案列表
+const getPurchasedPackageList = async (req, res, next) => {
+    try {
+        const { id } = req.user
+        //SELECT
+        // CreditPurchase.purchased_credits,
+        // CreditPurchase.price_paid,
+        // CreditPurchase.purchaseAt,
+        // (SELECT CreditPackage.name FROM CreditPackage INNER JOIN CreditPurchase ON CreditPurchase.credit_package_id = CreditPackage.id)
+        //FROM CreditPurchase
+        //INNER JOIN User
+        //ON CreditPurchase.user_id = USER.id
+
+        const creditPurchaseRepo = dataSource.getRepository('CreditPurchase')
+        const creditPurchases = await creditPurchaseRepo
+            .createQueryBuilder("CreditPurchase")
+            .innerJoinAndSelect("CreditPurchase.User", "User", "CreditPurchase.user_id = User.id AND User.id = :id", {id})
+            .innerJoinAndSelect("CreditPurchase.CreditPackage", "CreditPackage")
+            .select([
+                "CreditPurchase.purchased_credits AS purchased_credits",
+                "CreditPurchase.price_paid AS price_paid",
+                "CreditPackage.name AS name",
+                "CreditPurchase.purchaseAt AS purchase_at" //but get createdAt ?
+            ])
+            .getRawMany();
+
+        res.status(200).json({
+            status: 'success',
+            data: creditPurchases
+        })
+    } catch (err) {
+        logger.error(err)
+        next(err)
+    }
+}
+
 module.exports = {
     userSingup,
     userSingIn,
     userGetProfile,
-    editUserProfile
+    editUserProfile,
+    changeUserPassword,
+    getPurchasedPackageList
 }

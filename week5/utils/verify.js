@@ -1,13 +1,13 @@
 const validator = require('validator')
 
 isInvalidString = (input) => {
-    return typeof(input) !== 'string' || validator.isEmpty(input.trim())
+    return input === undefined || typeof(input) !== 'string' || validator.isEmpty(input.trim())
 }
 isInvalidInteger = (input) => {
-    return !validator.isInt(input.toString(), {min: 1})
+    return input === undefined || !validator.isInt(input.toString(), {min: 1})
 }
 isInvalidUuid = (input) => {
-    return !validator.isUUID(input)
+    return input === undefined || !validator.isUUID(input)
 }
 
 //中文字符的 Unicode 範圍是 \u4e00-\u9fa5
