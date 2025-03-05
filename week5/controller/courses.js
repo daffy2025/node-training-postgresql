@@ -50,6 +50,20 @@ const getCourseList = async (req, res, next) => {
     }
 }
 
+const coursePurchasedCredits = async (query_user_id) => {
+    try {
+        const creditPurchaseRepo = dataSource.getRepository('CreditPurchase')
+        const purchased_credits = await creditPurchaseRepo.sum('purchased_credits', {
+                user_id: query_user_id
+            }
+        )
+        return purchased_credits
+    } catch (err) {
+        logger.error(err)
+        next(err)
+    }
+}
+
 //報名課程
 const bookingCourse = async (req, res, next) => {
     try {
@@ -90,11 +104,7 @@ const bookingCourse = async (req, res, next) => {
             next(appError(400, 'failed', '已達最大參加人數，無法參加', next))
             return;
         }
-        const creditPurchaseRepo = dataSource.getRepository('CreditPurchase')
-        const purchased_credits = await creditPurchaseRepo.sum('purchased_credits', {
-                user_id: id
-            }
-        )
+        const purchased_credits = await coursePurchasedCredits(id)
         const bookedCourseCount = await courseBookingRepo.count({
             where: {
                 user_id: id,
@@ -166,5 +176,6 @@ const cancelCourse = async (req, res, next) => {
 module.exports = {
     getCourseList,
     bookingCourse,
-    cancelCourse
+    cancelCourse,
+    coursePurchasedCredits /* tool */
 }

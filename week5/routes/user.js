@@ -31,4 +31,7 @@ router.put('/password', auth, user.changeUserPassword)
 //取得使用者已購買的方案列表
 router.get('/credit-package', auth, user.getPurchasedPackageList)
 
+//取得已預約的課程列表
+router.get('/courses', auth, user.getBookedCourseList)
+
 module.exports = router

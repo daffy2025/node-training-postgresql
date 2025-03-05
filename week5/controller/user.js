@@ -13,6 +13,8 @@ const saltRounds = config.get('secret').saltRounds || 10 //for bcrypt hash
 const bcrypt = require('bcrypt')
 const generateJWT = require('../utils/generateJWT')
 
+const { coursePurchasedCredits } = require('./courses')
+
 //使用者註冊
 const userSingup = async (req, res, next) => {
     try {
@@ -307,7 +309,7 @@ const getPurchasedPackageList = async (req, res, next) => {
         // (SELECT CreditPackage.name FROM CreditPackage INNER JOIN CreditPurchase ON CreditPurchase.credit_package_id = CreditPackage.id)
         //FROM CreditPurchase
         //INNER JOIN User
-        //ON CreditPurchase.user_id = USER.id
+        //ON CreditPurchase.user_id = User.id
 
         const creditPurchaseRepo = dataSource.getRepository('CreditPurchase')
         const creditPurchases = await creditPurchaseRepo
@@ -318,7 +320,7 @@ const getPurchasedPackageList = async (req, res, next) => {
                 "CreditPurchase.purchased_credits AS purchased_credits",
                 "CreditPurchase.price_paid AS price_paid",
                 "CreditPackage.name AS name",
-                "CreditPurchase.purchaseAt AS purchase_at" //but get createdAt ?
+                "CreditPurchase.purchaseAt AS purchase_at" //fix: get createdAt ?
             ])
             .getRawMany();
 
@@ -332,11 +334,69 @@ const getPurchasedPackageList = async (req, res, next) => {
     }
 }
 
+//取得已預約的課程列表
+const getBookedCourseList = async (req, res, next) => {
+    try {
+        const { id } = req.user 
+
+        //SELECT
+        // CourseBooking.course_id,
+        // CourseBooking.status,
+        // (SELECT 
+        //      Course.name,
+        //      Course.start_at,
+        //      Course,end_at,
+        //      Course.meeting_url,
+        //      (SELECT User.name FROM User INNER JOIN Course ON Course.user_id = User.id)
+        //  FROM Course INNER JOIN CourseBooking ON CourseBooking.course_id = Course.id AND CourseBooking.cancelledAt = NULL ),
+        //FROM CourseBooking
+        //INNER JOIN User
+        //ON CourseBooking.user_id = id
+
+        const courseBookingRepo = dataSource.getRepository('CourseBooking')
+
+        const userSubQuery = courseBookingRepo
+            .createQueryBuilder("User")
+            .select("User.name")
+            .where("User.id = Course.user_id");
+
+        const courseBooked = await courseBookingRepo
+            .createQueryBuilder("CourseBooking")
+            .innerJoinAndSelect("CourseBooking.User", "User", "CourseBooking.cancelledAt IS NULL AND CourseBooking.user_id = User.id AND User.id = :id", {id})
+            .innerJoinAndSelect("CourseBooking.Course", "Course")
+            .innerJoin("User", "UserAlias", "UserAlias.id = Course.user_id") // 額外的 innerJoin
+            .select([
+                "Course.name AS name",
+                "CourseBooking.course_id AS course_id",
+                "UserAlias.name AS coach_name", // 使用子查詢
+                "CourseBooking.status AS status", //fix
+                "Course.start_at AS start_at",
+                "Course.end_at AS end_at",
+                "Course.meeting_url AS meeting_url"
+            ])
+            .getRawMany();
+
+        const purchasedCourse = await coursePurchasedCredits(id) - courseBooked.length;
+        res.status(200).json({
+            status: 'success',
+            data: {
+                credit_remain: purchasedCourse,
+                credit_usage: courseBooked.length,
+                course_booking: courseBooked
+            }
+        })
+    } catch (err) {
+        logger.error(err)
+        next(err)
+    }
+}
+
 module.exports = {
     userSingup,
     userSingIn,
     userGetProfile,
     editUserProfile,
     changeUserPassword,
-    getPurchasedPackageList
+    getPurchasedPackageList,
+    getBookedCourseList
 }
