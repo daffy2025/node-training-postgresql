@@ -211,7 +211,7 @@ const editUserProfile = async (req, res, next) => {
             select: ['name'],
             where: { id }
         })
-        res.status(201).json({
+        res.status(200).json({
             status: 'success',
             data: updatedUser
         })
