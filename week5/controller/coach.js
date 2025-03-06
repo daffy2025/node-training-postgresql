@@ -102,7 +102,59 @@ const getCoachDetailInfo = async (req, res, next) => {
     }
 }
 
+//取得指定教練課程列表
+const getCoachCourses = async (req, res, next) => {
+    try {
+        const {coachId} = req.params;
+        if (isInvalidString(coachId) || isInvalidUuid(coachId)) {
+            next(appError(400, 'failed', '欄位未填寫正確', next))
+            return;
+        }
+        const coachRepo = dataSource.getRepository('Coach')
+        const matchCoach = await coachRepo.findOne({
+            where: {id: coachId},
+            select: {
+                id: true,
+                user_id: true
+            }
+        })
+
+        if (!matchCoach) {
+            next(appError(400, 'failed', '找不到該教練', next))
+            return;
+        }
+        console.log(JSON.stringify(matchCoach))
+
+        const courseRepo = dataSource.getRepository('Course')
+        const courses = await courseRepo
+            .createQueryBuilder("Course")
+            .where("Course.user_id = :id", { id: matchCoach.user_id })
+            .innerJoin("Course.User", "User")
+            .innerJoin("Course.Skill", "Skill")
+            .select([
+                "Course.id AS id",
+                "User.name AS coach_name",
+                "Skill.name AS skill_name",
+                "Course.name AS name",
+                "Course.description AS description",
+                "Course.start_at AS start_at",
+                "Course.end_at AS end_at",
+                "Course.max_participants AS max_participants"
+            ])
+            .getRawMany();
+
+        res.status(200).json({
+            status : "success",
+            data: courses
+        })
+    } catch (err) {
+        logger.error(err)
+        next(err)
+    }
+}
+
 module.exports = {
     getCoachList,
-    getCoachDetailInfo
+    getCoachDetailInfo,
+    getCoachCourses
 }
