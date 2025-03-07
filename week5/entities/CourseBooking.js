@@ -62,6 +62,7 @@ module.exports = new EntitySchema({
         User: {
             target: 'User',
             type: 'many-to-one',
+            inverseSide: 'CouserBooking',
             joinColumn: {
                 name: 'user_id',
                 referenceColumnName: 'id',
@@ -71,6 +72,7 @@ module.exports = new EntitySchema({
         Course: {
             target: 'Course',
             type: 'many-to-one',
+            inverseSide: 'CouserBooking',
             joinColumn: {
                 name: 'course_id',
                 referenceColumnName: 'id',

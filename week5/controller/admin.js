@@ -5,6 +5,8 @@ const logger = require('../utils/logger')('admin')
 const {isInvalidString, isInvalidInteger, isInvalidUuid, 
     isInvalidUrl, isInvalidTimestamp} = require('../utils/verify')
 
+const { calculateStatus, bookedCourseParticipants } = require('./courses')
+
 //新增教練課程資料
 const createCoachClassRecord = async (req, res, next) => {
     try {
@@ -220,8 +222,51 @@ const editCoachClassRecord = async (req, res, next) => {
     }
 }
 
+
+//取得教練自己的課程列表
+const getCoachOwnedCourses = async (req, res, next) => {
+    try {
+        const { id } = req.user;
+        const coachRepo = dataSource.getRepository('Coach')
+        const matchCoach = await coachRepo.findOne({
+            where: {user_id: id},
+        })
+
+        if (!matchCoach) {
+            next(appError(400, 'failed', '找不到教練', next))
+            return;
+        }
+
+        const courseRepo = dataSource.getRepository('Course')
+        const rawCourses  = await courseRepo
+            .createQueryBuilder("Course")
+            .where("Course.user_id = :id", { id })
+            .select([ 'id', 'name', 'start_at', 'end_at', 'max_participants' ])
+            .getRawMany()
+            
+        const courses = await Promise.all(
+            rawCourses.map(async (course) => {
+                const participants = await bookedCourseParticipants(course.id);
+                return {
+                    ...course,
+                    status: calculateStatus(course.start_at, course.end_at),
+                    participants
+                }
+            })
+        );            
+
+        res.status(200).json({
+            status: "success",
+            data: courses
+        })
+    } catch(err) {
+        logger.error(err)
+        next(err)
+    }
+}
 module.exports = {
     createCoachClassRecord,
     setUserAsCoach,
-    editCoachClassRecord
+    editCoachClassRecord,
+    getCoachOwnedCourses
 }

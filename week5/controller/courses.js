@@ -64,6 +64,29 @@ const coursePurchasedCredits = async (query_user_id) => {
     }
 }
 
+const calculateStatus = (startDate, endDate) => {
+    const now = new Date();
+    if (now < startDate) return "尚未開始";
+    if (now >= startDate && now <= endDate) return "報名中";
+    return "已結束";
+};
+       
+const bookedCourseParticipants = async (courseId) => {
+    try {
+        const courseBookingRepo = dataSource.getRepository('CourseBooking')
+        const courseBooked = await courseBookingRepo.count({
+            where: {
+                course_id: courseId,
+                cancelledAt: IsNull()
+            }
+        })
+        return courseBooked
+    } catch(err) {
+        logger.error(err)
+        next(err)
+    }
+}
+
 //報名課程
 const bookingCourse = async (req, res, next) => {
     try {
@@ -82,6 +105,11 @@ const bookingCourse = async (req, res, next) => {
             next(appError(400, 'failed', 'ID錯誤', next))
             return;
         }
+        const status = calculateStatus(existCourse.start_at, existCourse.end_at)
+        if (status === '已結束') {
+            next(appError(400, 'failed', '課程已結束，不可報名', next))
+            return;
+        }
         const courseBookingRepo = dataSource.getRepository('CourseBooking')
         const courseBooked = await courseBookingRepo.findOne({
             where: {
@@ -94,12 +122,7 @@ const bookingCourse = async (req, res, next) => {
             next(appError(400, 'failed', '已經報名過此課程', next))
             return;
         }
-        const bookedUserCount = await courseBookingRepo.count({
-            where: {
-                course_id: courseId,
-                cancelledAt: IsNull()
-            }
-        })
+        const bookedUserCount = await bookedCourseParticipants(courseId)
         if (bookedUserCount >= existCourse.max_participants) {
             next(appError(400, 'failed', '已達最大參加人數，無法參加', next))
             return;
@@ -177,5 +200,7 @@ module.exports = {
     getCourseList,
     bookingCourse,
     cancelCourse,
-    coursePurchasedCredits /* tool */
+    coursePurchasedCredits, /* tool */
+    calculateStatus, /* tool */
+    bookedCourseParticipants /* tool */
 }

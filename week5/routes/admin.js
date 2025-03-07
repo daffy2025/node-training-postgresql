@@ -16,6 +16,9 @@ const admin = require('../controller/admin')
 //新增教練課程資料
 router.post('/courses', auth, isCoach, admin.createCoachClassRecord)
 
+//取得教練自己的課程列表
+router.get('/courses', auth, isCoach, admin.getCoachOwnedCourses)
+
 //將使用者新增為教練
 router.post('/:userId', admin.setUserAsCoach)
 
