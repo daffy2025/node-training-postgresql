@@ -406,11 +406,64 @@ const updateCoachProfile = async (req, res, next) => {
     }
 }
 
+//取得教練自己的詳細資料
+const getCoachProfile = async (req, res, next) => {
+    try {
+        const { id } = req.user
+
+        const coachRepo = dataSource.getRepository('Coach')
+        const existCoach = await coachRepo.findOne({
+            where: {user_id: id}
+        })
+        if (!existCoach) {
+            appError(400, 'failed', '找不到教練')
+        }
+
+        const rawProfile = await coachRepo
+            .createQueryBuilder('Coach')
+            .innerJoin('Coach.CoachLinkSkill', 'CoachLinkSkill')
+            .select([
+                'Coach.id AS id',
+                'Coach.experience_years AS experience_years',
+                'Coach.description AS description',
+                'Coach.profile_image_url AS profile_image_url',
+                'CoachLinkSkill.skill_id AS skill_id'
+            ])
+            .where("Coach.user_id = :id", { id })
+            .getRawMany()
+
+        const coachProfileMap = new Map();
+
+        rawProfile.forEach(row => {
+            if (!coachProfileMap.has(row.id)) {
+                coachProfileMap.set(row.id, {
+                    id: row.id,
+                    experience_years: row.experience_years,
+                    description: row.description,
+                    profile_image_url: row.profile_image_url,
+                    skill_ids: []
+                });
+            }
+            coachProfileMap.get(row.id).skill_ids.push(row.skill_id);
+        });
+        
+        const coachProfile = Array.from(coachProfileMap.values());
+            
+        res.status(200).json({
+            status : "success",
+            data: coachProfile
+        })
+    } catch(err) {
+        logger.error(err)
+        next(err)
+    }
+}
 module.exports = {
     createCoachClassRecord,
     setUserAsCoach,
     editCoachClassRecord,
     getCoachOwnedCourses,
     getCoachOwnClassRecord,
-    updateCoachProfile
+    updateCoachProfile,
+    getCoachProfile
 }

@@ -52,6 +52,16 @@ module.exports = new EntitySchema({
                 referenceColumnName: 'id',
                 foreignKeyConstraintName: 'coach_user_id_fk'
             }
+        },
+        CoachLinkSkill: {
+            target: 'CoachLinkSkill',
+            type: 'one-to-many',
+            inverseSide: 'Coach',
+            joinColumn: {
+                name: 'user_id',
+                referenceColumnName: 'user_id',
+                foreignKeyConstraintName: 'coachlinkskill_coach_user_id_fk'
+            }
         }
     }
 })
