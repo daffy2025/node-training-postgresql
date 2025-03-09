@@ -29,7 +29,7 @@ const addSkill = async (req, res, next) => {
     try {
         const { name } = req.body;
         if (isInvalidString(name)) {
-            next(appError(400, 'failed', '欄位未填寫正確', next))
+            appError(400, 'failed', '欄位未填寫正確')
             return;
         }
 
@@ -38,7 +38,7 @@ const addSkill = async (req, res, next) => {
             where: { name }
         })
         if (existSkill) {
-            next(appError(409, 'failed', '資料重複', next))
+            appError(409, 'failed', '資料重複')
             return;
         }
 
@@ -65,13 +65,13 @@ const deleteSkill = async (req, res, next) => {
     try {
         const {skillId} = req.params;
         if (isInvalidUuid(skillId)) {
-            next(appError(400, 'failed', 'ID錯誤', next))
+            appError(400, 'failed', 'ID錯誤')
             return;
         }
         const skillRepo = dataSource.getRepository(repoName);
         const result = await skillRepo.delete(skillId);
         if (result.affected === 0) {
-            next(appError(400, 'failed', 'ID錯誤', next))
+            appError(400, 'failed', 'ID錯誤')
             return;
         }
         res.status(200).json({

@@ -24,25 +24,25 @@ const userSingup = async (req, res, next) => {
             isInvalidString(password)) {
             const warnMessage = '欄位未填寫正確'
             logger.warn(warnMessage)
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
         if (isInvalidName(name)) {
             const warnMessage = '使用者名稱不符合規則，最少2個字，最多10個字，不可包含任何特殊符號與空白，第一個字不可為數字'
             logger.warn(`建立使用者錯誤：${warnMessage}`)
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
         if (isInvalidEmail(email)) {
             const warnMessage = '使用者信箱不符合規則'
             logger.warn(`建立使用者錯誤：${warnMessage}`)
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
         if (isInvalidPassword(password)) {
             const warnMessage = '密碼不符合規則，需要包含英文數字大小寫，最短8個字，最長16個字'
             logger.warn(`建立使用者錯誤：${warnMessage}`)
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
         const userRepo = dataSource.getRepository(repoName)
@@ -52,7 +52,7 @@ const userSingup = async (req, res, next) => {
         if (existEmail) {
             const warnMessage = 'Email已被使用'
             logger.warn(`建立使用者錯誤：${warnMessage}`)
-            next(appError(409, 'failed', warnMessage, next))
+            appError(409, 'failed', warnMessage)
             return
         }
         const salt = await bcrypt.genSalt(parseInt(saltRounds))
@@ -88,20 +88,20 @@ const userSingIn = async (req, res, next) => {
             isInvalidString(password)) {
             const warnMessage = '欄位未填寫正確'
             logger.warn(warnMessage)
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
 
         if (isInvalidEmail(email)) {
             const warnMessage = '使用者信箱不符合規則'
             logger.warn('登入錯誤',warnMessage)
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
         if (isInvalidPassword(password)) {
             const warnMessage = '密碼不符合規則，需要包含英文數字大小寫，最短8個字，最長16個字'
             logger.warn('登入錯誤',warnMessage)
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
         const userRepo = dataSource.getRepository(repoName)
@@ -112,14 +112,14 @@ const userSingIn = async (req, res, next) => {
         if (!existUser) {
             const warnMessage = '使用者不存在或密碼輸入錯誤'
             logger.warn('登入錯誤',warnMessage)
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
         const isMatch = await bcrypt.compare(password, existUser.password)
         if (!isMatch) {
             const warnMessage = '使用者不存在或密碼輸入錯誤'
             logger.warn('登入錯誤',warnMessage)
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
         const token = await generateJWT(
@@ -152,7 +152,7 @@ const userGetProfile = async (req, res, next) => {
             where: { id }
         })
         if (!getUser) {
-            next(appError(400, 'failed', '欄位未填寫正確', next))
+            appError(400, 'failed', '欄位未填寫正確')
             return;
         }
         res.status(200).json({
@@ -173,13 +173,13 @@ const editUserProfile = async (req, res, next) => {
         if (isInvalidString(name)) {
             const warnMessage = '欄位未填寫正確'
             logger.warn(warnMessage)
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
         if (isInvalidName(name)) {
             const warnMessage = '使用者名稱不符合規則，最少2個字，最多10個字，不可包含任何特殊符號與空白，第一個字不可為數字'
             logger.warn(`更新使用者錯誤：${warnMessage}`)
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
         const userRepo = dataSource.getRepository(repoName)
@@ -188,11 +188,11 @@ const editUserProfile = async (req, res, next) => {
             where: { id }
         })
         if (!getUser) {
-            next(appError(400, 'failed', '無此使用者', next))
+            appError(400, 'failed', '無此使用者')
             return;
         }
         if (name === getUser.name) {
-            next(appError(400, 'failed', '使用者名稱未變更', next))
+            appError(400, 'failed', '使用者名稱未變更')
             return;
         }
 
@@ -204,7 +204,7 @@ const editUserProfile = async (req, res, next) => {
         if (updateUser.affected === 0) {
             const warnMessage = '更新使用者失敗'
             logger.warn('更新使用者錯誤：', warnMessage)
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
         const updatedUser = await userRepo.findOne({
@@ -230,7 +230,7 @@ const changeUserPassword = async (req, res, next) => {
             isInvalidString(confirm_new_password)) {
             const warnMessage = '欄位未填寫正確'
             logger.warn(warnMessage)
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
 
@@ -239,18 +239,18 @@ const changeUserPassword = async (req, res, next) => {
             isInvalidPassword(confirm_new_password)) {
             const warnMessage = '密碼不符合規則，需要包含英文數字大小寫，最短8個字，最長16個字'
             logger.warn('更新密碼錯誤',warnMessage)
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
         if (password === new_password) {
             const warnMessage = '新密碼不能與舊密碼相同'
             logger.warn('更新密碼錯誤',warnMessage)
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
         if (new_password !== confirm_new_password) {
             const warnMessage = '新密碼與驗證新密碼不一致'
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
         const userRepo = dataSource.getRepository(repoName)
@@ -261,14 +261,14 @@ const changeUserPassword = async (req, res, next) => {
         if (!existUser) {
             const warnMessage = '使用者不存在'
             logger.warn('更新密碼錯誤',warnMessage)
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
         const isMatch = await bcrypt.compare(password, existUser.password)
         if (!isMatch) {
             const warnMessage = '密碼輸入錯誤'
             logger.warn('更新密碼錯誤',warnMessage)
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
         const salt = await bcrypt.genSalt(parseInt(saltRounds))
@@ -284,7 +284,7 @@ const changeUserPassword = async (req, res, next) => {
         if ((await newUser).affected === 0) {
             const warnMessage = '更新密碼失敗'
             logger.warn('更新密碼錯誤',warnMessage)
-            next(appError(400, 'failed', warnMessage, next))
+            appError(400, 'failed', warnMessage)
             return
         }
         res.status(201).json({
@@ -354,12 +354,6 @@ const getBookedCourseList = async (req, res, next) => {
         //ON CourseBooking.user_id = id
 
         const courseBookingRepo = dataSource.getRepository('CourseBooking')
-
-        const userSubQuery = courseBookingRepo
-            .createQueryBuilder("User")
-            .select("User.name")
-            .where("User.id = Course.user_id");
-
         const courseBooked = await courseBookingRepo
             .createQueryBuilder("CourseBooking")
             .innerJoinAndSelect("CourseBooking.User", "User", "CourseBooking.cancelledAt IS NULL AND CourseBooking.user_id = User.id AND User.id = :id", {id})

@@ -42,7 +42,7 @@ app.use('/api/courses', courseRouter)
 app.use('/api/upload', uploadRouter)
 
 app.use( (req, res, next) => {
-  next(appError(404, 'error', '無此路由資訊', next))
+  appError(404, 'error', '無此路由資訊')
 })
 
 // eslint-disable-next-line no-unused-vars

@@ -12,7 +12,7 @@ const pruchasePackage = async (req, res, next) => {
         const { id } = req.user;
         const { creditPackageId } = req.params;
         if (isInvalidUuid(creditPackageId)) {
-            next(appError(400, 'failed', '欄位未填寫正確', next))
+            appError(400, 'failed', '欄位未填寫正確')
             return;
         }
 
@@ -23,7 +23,7 @@ const pruchasePackage = async (req, res, next) => {
             }
         });
         if (!findCreditPackage) {
-            next(appError(400, 'failed', 'ID錯誤', next))
+            appError(400, 'failed', 'ID錯誤')
             return;
         }
 
@@ -70,7 +70,7 @@ const addCoursePackage = async (req, res, next) => {
         if (isInvalidString(name) ||
             isInvalidInteger(credit_amount) ||
             isInvalidInteger(price)) {
-            next(appError(400, 'failed', '欄位未填寫正確', next))
+            appError(400, 'failed', '欄位未填寫正確')
             return;
         }
         const creditPackageRepo = dataSource.getRepository(repoName);
@@ -79,7 +79,7 @@ const addCoursePackage = async (req, res, next) => {
         })
 
         if (existCreditPurchase) {
-            next(appError(409, 'failed', '資料重複', next))
+            appError(409, 'failed', '資料重複')
             return;
         }
 
@@ -111,13 +111,13 @@ const deleteCoursePackage = async (req, res, next) => {
     try {
         const {creditPackageId} = req.params;
         if (isInvalidUuid(creditPackageId)) {
-            next(appError(400, 'failed', '欄位未填寫正確', next))
+            appError(400, 'failed', '欄位未填寫正確')
             return;
         }
         const creditPackageRepo = dataSource.getRepository(repoName);
         const result = await creditPackageRepo.delete(creditPackageId);
         if (result.affected === 0) {
-            next(appError(400, 'failed', 'ID錯誤', next))
+            appError(400, 'failed', 'ID錯誤')
             return;
         }
         res.status(200).json({

@@ -2,22 +2,21 @@ const { dataSource } = require('../db/data-source')
 
 const appError = require('../utils/appError')
 const logger = require('../utils/logger')('coach')
-const {isInvalidString, isInvalidInteger, isInvalidUuid, 
-    isInvalidUrl, isInvalidTimestamp} = require('../utils/verify')
+const {isInvalidString, isInvalidInteger, isInvalidUuid} = require('../utils/verify')
 
 //取得教練列表
 const getCoachList = async (req, res, next) => {
     try {
         const {per, page} = req.query;
         if (isInvalidString(per) || isInvalidString(page)) {
-            next(appError(400, 'failed', '欄位未填寫正確', next))
+            appError(400, 'failed', '欄位未填寫正確')
             return;
         }
         const pageSize = parseInt(per)
         const currentPage = parseInt(page)
         if (isInvalidInteger(pageSize) ||
             isInvalidInteger(currentPage)) {
-            next(appError(400, 'failed', '欄位未填寫正確', next))
+            appError(400, 'failed', '欄位未填寫正確')
             return;
         }
         const coachRepo = dataSource.getRepository('Coach')
@@ -52,7 +51,7 @@ const getCoachDetailInfo = async (req, res, next) => {
     try {
         const {coachId} = req.params;
         if (isInvalidString(coachId) || isInvalidUuid(coachId)) {
-            next(appError(400, 'failed', '欄位未填寫正確', next))
+            appError(400, 'failed', '欄位未填寫正確')
             return;
         }
 
@@ -75,7 +74,7 @@ const getCoachDetailInfo = async (req, res, next) => {
             relations: ['User']
         })
         if (!matchCoach) {
-            next(appError(400, 'failed', '找不到該教練', next))
+            appError(400, 'failed', '找不到該教練')
             return;
         }
         res.status(200).json({
@@ -107,7 +106,7 @@ const getCoachCourses = async (req, res, next) => {
     try {
         const {coachId} = req.params;
         if (isInvalidString(coachId) || isInvalidUuid(coachId)) {
-            next(appError(400, 'failed', '欄位未填寫正確', next))
+            appError(400, 'failed', '欄位未填寫正確')
             return;
         }
         const coachRepo = dataSource.getRepository('Coach')
@@ -120,7 +119,7 @@ const getCoachCourses = async (req, res, next) => {
         })
 
         if (!matchCoach) {
-            next(appError(400, 'failed', '找不到該教練', next))
+            appError(400, 'failed', '找不到該教練')
             return;
         }
         console.log(JSON.stringify(matchCoach))

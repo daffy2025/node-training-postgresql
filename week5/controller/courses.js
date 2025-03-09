@@ -94,7 +94,7 @@ const bookingCourse = async (req, res, next) => {
         const { courseId } = req.params;
 
         if (isInvalidUuid(courseId)) {
-            next(appError(400, 'failed', '欄位未填寫正確', next))
+            appError(400, 'failed', '欄位未填寫正確')
             return;
         }
         const courseRepo = dataSource.getRepository('Course')
@@ -102,12 +102,12 @@ const bookingCourse = async (req, res, next) => {
             where: { id: courseId }
         })
         if (!existCourse) {
-            next(appError(400, 'failed', 'ID錯誤', next))
+            appError(400, 'failed', 'ID錯誤')
             return;
         }
         const status = calculateStatus(existCourse.start_at, existCourse.end_at)
         if (status === '已結束') {
-            next(appError(400, 'failed', '課程已結束，不可報名', next))
+            appError(400, 'failed', '課程已結束，不可報名')
             return;
         }
         const courseBookingRepo = dataSource.getRepository('CourseBooking')
@@ -119,12 +119,12 @@ const bookingCourse = async (req, res, next) => {
             }
         })
         if (courseBooked) {
-            next(appError(400, 'failed', '已經報名過此課程', next))
+            appError(400, 'failed', '已經報名過此課程')
             return;
         }
         const bookedUserCount = await bookedCourseParticipants(courseId)
         if (bookedUserCount >= existCourse.max_participants) {
-            next(appError(400, 'failed', '已達最大參加人數，無法參加', next))
+            appError(400, 'failed', '已達最大參加人數，無法參加')
             return;
         }
         const purchased_credits = await coursePurchasedCredits(id)
@@ -135,7 +135,7 @@ const bookingCourse = async (req, res, next) => {
             }
         })
         if (bookedCourseCount >= purchased_credits) {
-            next(appError(400, 'failed', '已無可使用堂數', next))
+            appError(400, 'failed', '已無可使用堂數')
             return;
         }
         const bookingCourse = courseBookingRepo.create({
@@ -160,7 +160,7 @@ const cancelCourse = async (req, res, next) => {
         const { courseId } = req.params;
 
         if (isInvalidUuid(courseId)) {
-            next(appError(400, 'failed', '欄位未填寫正確', next))
+            appError(400, 'failed', '欄位未填寫正確')
             return;
         }
         const courseBookingRepo = dataSource.getRepository('CourseBooking')
@@ -172,7 +172,7 @@ const cancelCourse = async (req, res, next) => {
             }
         })
         if (!courseBooked) {
-            next(appError(400, 'failed', '課程不存在', next))
+            appError(400, 'failed', '課程不存在')
             return;
         }
         const updateCourseBooked = await courseBookingRepo.update({
@@ -183,7 +183,7 @@ const cancelCourse = async (req, res, next) => {
             cancelledAt: new Date().toISOString()
         })
         if (updateCourseBooked.affected === 0) {
-            next(appError(400, 'failed', '取消失敗', next))
+            appError(400, 'failed', '取消失敗')
             return;
         }
         res.status(200).json({
