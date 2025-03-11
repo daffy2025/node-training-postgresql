@@ -31,6 +31,9 @@ router.put('/courses/:courseId', auth, isCoach, admin.editCoachClassRecord)
 //變更教練資料
 router.put('/', auth, isCoach, admin.updateCoachProfile)
 
+//取得教練自己的月營收資料
+router.get('/revenue', auth, isCoach, admin.getCoachMonthRevenue)
+
 //取得教練自己的詳細資料
 router.get('/', auth, isCoach, admin.getCoachProfile)
 

@@ -347,11 +347,13 @@ const updateCoachProfile = async (req, res, next) => {
                 if (isInvalidUuid(skill_id)) {
                     logger.warn("變更教練資料：教練專長格式錯誤")
                     appError(400, 'failed', '欄位未填寫正確')
+                    return
                 }
                 const existSkill = await skillRepo.findOneBy({id: skill_id})
                 if (!existSkill) {
                     logger.warn("變更教練資料：專長不存在")
                     appError(400, 'failed', '專長不存在')
+                    return
                 }
             })
         )
@@ -362,6 +364,7 @@ const updateCoachProfile = async (req, res, next) => {
         if (!existCoach) {
             logger.warn("變更教練資料：找不到教練")
             appError(400, 'failed', '找不到教練')
+            return
         }
 
         const updatedCoach = await coachRepo
@@ -417,6 +420,7 @@ const getCoachProfile = async (req, res, next) => {
         })
         if (!existCoach) {
             appError(400, 'failed', '找不到教練')
+            return
         }
 
         const rawProfile = await coachRepo
@@ -458,6 +462,120 @@ const getCoachProfile = async (req, res, next) => {
         next(err)
     }
 }
+
+const monthMap = {
+    'january': '01',
+    'february': '02',
+    'march': '03',
+    'april': '04',
+    'may': '05',
+    'june': '06',
+    'july': '07',
+    'august': '08',
+    'september': '09',
+    'october': '10',
+    'november': '11',
+    'december': '12'
+}
+
+const isValidMonth = (input) => {
+    return monthMap[input] !== undefined
+}
+
+//取得教練自己的月營收資料
+const getCoachMonthRevenue = async (req, res, next) => {
+    try {
+        const { id } = req.user
+        const { month } = req.query
+        
+        if (isValidMonth(month) === false) {
+            appError(400, 'failed', '欄位未填寫正確')
+            return
+        }
+        const coachRepo = dataSource.getRepository('Coach')
+        const existCoach = await coachRepo.findOne({
+            where: {user_id: id}
+        })
+        if (!existCoach) {
+            appError(400, 'failed', '找不到教練')
+            return
+        }
+
+        // 獲取當前年份
+        const currentYear = new Date().getFullYear();
+
+        // 計算月份範圍
+        
+        const startOfMonth = new Date(`${currentYear}-${monthMap[month]}-01T00:00:00Z`);
+        const endOfMonth = new Date(startOfMonth);
+        endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+
+        // 查詢指定教練指定月份所開的課程(id)
+        const courseRepo = dataSource.getRepository('Course')
+        const courseInMonth = await courseRepo
+            .createQueryBuilder('Course')
+            .innerJoin("Course.User", "User")
+            .where("User.id= :id", {id})
+            .andWhere('Course.start_at >= :startOfMonth', { startOfMonth })
+            .andWhere('Course.start_at < :endOfMonth', { endOfMonth })
+            .select([
+                'Course.id AS id'
+            ])
+            .getRawMany()
+            .then( results => results.map(result => result.id))
+        
+        if (courseInMonth.length === 0) {
+            res.status(200).json({
+                status : "success",
+                data: {
+                    total: {
+                        participants: 0,
+                        revenue: 0,
+                        course_count: 0
+                    }
+                }
+            })
+        }
+
+        //查出預約課程(id)的數量與使用者
+        const courseBookingRepo = dataSource.getRepository('CourseBooking')
+        const bookedUsers = await courseBookingRepo
+            .createQueryBuilder('CourseBooked')
+            .where('CourseBooked.course_id IN (:...bookedIds)', { bookedIds: courseInMonth })
+            .andWhere('CourseBooked.cancelled_at IS NULL')
+            .getMany()
+
+        //計算所有方案課程均價
+        const creditPackageRepo = dataSource.getRepository('CreditPackage')
+        const result = await creditPackageRepo
+            .createQueryBuilder('CreditPackage')
+            .select([
+                'SUM(CreditPackage.credit_amount) AS total_credits',
+                'SUM(CreditPackage.price) AS total_price',
+                'ROUND(' +
+                'CASE WHEN SUM(CreditPackage.credit_amount) > 0 ' +
+                'THEN SUM(CreditPackage.price) / SUM(CreditPackage.credit_amount)' +
+                'ELSE 0 END, 2) AS avg_price_per_course'
+            ])
+            .getRawOne();
+
+        const revenue =  (result.avg_price_per_course * bookedUsers.length).toFixed(2);
+
+        res.status(200).json({
+            status : "success",
+            data: {
+                total: {
+                    participants: bookedUsers.length,
+                    revenue: revenue,
+                    course_count: courseInMonth.length
+                }
+            }
+        })
+    } catch (err) {
+        logger.error(err)
+        next(err)
+    }
+}
 module.exports = {
     createCoachClassRecord,
     setUserAsCoach,
@@ -465,5 +583,6 @@ module.exports = {
     getCoachOwnedCourses,
     getCoachOwnClassRecord,
     updateCoachProfile,
-    getCoachProfile
+    getCoachProfile,
+    getCoachMonthRevenue
 }
